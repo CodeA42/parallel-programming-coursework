@@ -1,9 +1,9 @@
-
-typedef struct {
+typedef struct
+{
      unsigned char red, green, blue;
 } PPMPixel;
-
-typedef struct {
+typedef struct
+{
      int x, y;
      PPMPixel *data;
 } PPMImage;

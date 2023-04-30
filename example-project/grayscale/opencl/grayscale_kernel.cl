@@ -1,9 +1,5 @@
 #include "grayscale.h"
-
-// Чрез указателя а ще имаме достъп до входните данни, а в чрез указателя c ще запазваме трансформираните данните
-// така, че след това тези трансформирани данни да бъдат копирани в паметта на хоста, за да може да се запазят в ново изображение
-__kernel void grayscale(__global PPMPixel *a, __global PPMPixel *c, const unsigned int n) {                                                             
-     // Идентификатор на нишката
+__kernel void grayscale(__global PPMPixel *a, __global PPMPixel *c, const unsigned int n) {
      int id = get_global_id(0);
      if (id < n) {
           double f = 1;

@@ -1,0 +1,6 @@
+{
+  "files.associations": {
+    ".env": "raw",
+    "time.h": "c"
+  }
+}
