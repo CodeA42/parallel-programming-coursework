@@ -78,14 +78,14 @@ inline bool intersect(const Ray &r, double &t, int &id)
   return t < inf;
 }
 
-Vec radiance(const Ray &r, int depth, unsigned short *Xi)
+Vec radiance(const Ray &ray, int depth, unsigned short *Xi)
 {
-  double t;   // distance to intersection
-  int id = 0; // id of intersected object
-  if (!intersect(r, t, id))
-    return Vec();                  // if miss, return black
-  const Sphere &obj = spheres[id]; // the hit object
-  Vec x = r.o + r.d * t, n = (x - obj.p).norm(), nl = n.dot(r.d) < 0 ? n : n * -1, f = obj.c;
+  double distToIntersection;
+  int idOfIntersectedObj;
+  if (!intersect(ray, distToIntersection, idOfIntersectedObj))
+    return Vec();                                  // if miss, return black
+  const Sphere &obj = spheres[idOfIntersectedObj]; // the hit object
+  Vec x = ray.o + ray.d * distToIntersection, n = (x - obj.p).norm(), nl = n.dot(ray.d) < 0 ? n : n * -1, f = obj.c;
   double p = f.x > f.y && f.x > f.z ? f.x : f.y > f.z ? f.y
                                                       : f.z; // max refl
   if (++depth > 5)
@@ -103,13 +103,13 @@ Vec radiance(const Ray &r, int depth, unsigned short *Xi)
     return obj.e + f.mult(radiance(Ray(x, d), depth, Xi));
   }
   else if (obj.refl == SPEC) // Ideal SPECULAR reflection
-    return obj.e + f.mult(radiance(Ray(x, r.d - n * 2 * n.dot(r.d)), depth, Xi));
-  Ray reflRay(x, r.d - n * 2 * n.dot(r.d)); // Ideal dielectric REFRACTION
-  bool into = n.dot(nl) > 0;                // Ray from outside going in?
-  double nc = 1, nt = 1.5, nnt = into ? nc / nt : nt / nc, ddn = r.d.dot(nl), cos2t;
+    return obj.e + f.mult(radiance(Ray(x, ray.d - n * 2 * n.dot(ray.d)), depth, Xi));
+  Ray reflRay(x, ray.d - n * 2 * n.dot(ray.d)); // Ideal dielectric REFRACTION
+  bool into = n.dot(nl) > 0;                    // Ray from outside going in?
+  double nc = 1, nt = 1.5, nnt = into ? nc / nt : nt / nc, ddn = ray.d.dot(nl), cos2t;
   if ((cos2t = 1 - nnt * nnt * (1 - ddn * ddn)) < 0) // Total internal reflection
     return obj.e + f.mult(radiance(reflRay, depth, Xi));
-  Vec tdir = (r.d * nnt - n * ((into ? 1 : -1) * (ddn * nnt + sqrt(cos2t)))).norm();
+  Vec tdir = (ray.d * nnt - n * ((into ? 1 : -1) * (ddn * nnt + sqrt(cos2t)))).norm();
   double a = nt - nc, b = nt + nc, R0 = a * a / (b * b), c = 1 - (into ? -ddn : tdir.dot(n));
   double Re = R0 + (1 - R0) * c * c * c * c * c, Tr = 1 - Re, P = .25 + .5 * Re, RP = Re / P, TP = Tr / (1 - P);
   return obj.e + f.mult(depth > 2 ? (erand48(Xi) < P ? // Russian roulette
