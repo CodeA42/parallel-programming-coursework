@@ -204,9 +204,11 @@ Vec radiance(const Ray &ray, int depth, unsigned short *seed)
   double distToIntersection;
   int idOfIntersectedObj;
   if (!intersect(ray, distToIntersection, idOfIntersectedObj))
-    return Vec();                                  // if miss, return black
-  const Sphere &obj = spheres[idOfIntersectedObj]; // the hit object
-  Vec x = ray.origin + ray.direction * distToIntersection, n = (x - obj.position).norm(), nl = n.dot(ray.direction) < 0 ? n : n * -1, f = obj.color;
+    return Vec();                                                // if miss, return black
+  const Sphere &intersectedSphere = spheres[idOfIntersectedObj]; // the hit object
+  Vec x = ray.origin + ray.direction * distToIntersection;
+  Vec n = (x - intersectedSphere.position).norm();
+  Vec nl = n.dot(ray.direction) < 0 ? n : n * -1, f = intersectedSphere.color;
   double p = f.x > f.y && f.x > f.z ? f.x : f.y > f.z ? f.y
                                                       : f.z; // max refl
   if (++depth > 5)
@@ -217,31 +219,55 @@ Vec radiance(const Ray &ray, int depth, unsigned short *seed)
     }
     else
     {
-      return obj.emission;
+      return intersectedSphere.emission;
     }
-  }                               // R.R.
-  if (obj.reflectionType == DIFF) // Ideal DIFFUSE reflection
+  }                                             // R.R.
+  if (intersectedSphere.reflectionType == DIFF) // Ideal DIFFUSE reflection
   {
-    return calculateIdealDiffuseReflection(seed, nl, obj, f, x, depth);
+    return calculateIdealDiffuseReflection(seed, nl, intersectedSphere, f, x, depth);
   }
-  else if (obj.reflectionType == SPEC) // Ideal SPECULAR reflection
+  else if (intersectedSphere.reflectionType == SPEC) // Ideal SPECULAR reflection
   {
-    return obj.emission + f.mult(radiance(Ray(x, ray.direction - n * 2 * n.dot(ray.direction)), depth, seed));
+    return intersectedSphere.emission + f.mult(radiance(Ray(x, ray.direction - n * 2 * n.dot(ray.direction)), depth, seed));
   }
   Ray reflRay(x, ray.direction - n * 2 * n.dot(ray.direction)); // Ideal dielectric REFRACTION
   bool into = n.dot(nl) > 0;                                    // Ray from outside going in?
-  double nc = 1, nt = 1.5, nnt = into ? nc / nt : nt / nc, ddn = ray.direction.dot(nl), cos2t;
+  double nc = 1;
+  double nt = 1.5;
+  double nnt = into ? nc / nt : nt / nc;
+  double ddn = ray.direction.dot(nl);
+  double cos2t;
   if ((cos2t = 1 - nnt * nnt * (1 - ddn * ddn)) < 0) // Total internal reflection
   {
-    return obj.emission + f.mult(radiance(reflRay, depth, seed));
+    return intersectedSphere.emission + f.mult(radiance(reflRay, depth, seed));
   }
   Vec tdir = (ray.direction * nnt - n * ((into ? 1 : -1) * (ddn * nnt + sqrt(cos2t)))).norm();
-  double a = nt - nc, b = nt + nc, R0 = a * a / (b * b), c = 1 - (into ? -ddn : tdir.dot(n));
-  double Re = R0 + (1 - R0) * c * c * c * c * c, Tr = 1 - Re, P = .25 + .5 * Re, RP = Re / P, TP = Tr / (1 - P);
-  return obj.emission + f.mult(depth > 2 ? (erand48(seed) < P ? // Russian roulette
-                                                radiance(reflRay, depth, seed) * RP
-                                                              : radiance(Ray(x, tdir), depth, seed) * TP)
-                                         : radiance(reflRay, depth, seed) * Re + radiance(Ray(x, tdir), depth, seed) * Tr);
+  double a = nt - nc;
+  double b = nt + nc;
+  double R0 = a * a / (b * b);
+  double c = 1 - (into ? -ddn : tdir.dot(n));
+  double Re = R0 + (1 - R0) * c * c * c * c * c;
+  double Tr = 1 - Re;
+  double P = .25 + .5 * Re;
+  double RP = Re / P;
+  double TP = Tr / (1 - P);
+  Vec wrxstiimpreza;
+  if (depth > 2)
+  {
+    if (erand48(seed) < P) // Russian roulette
+    {
+      wrxstiimpreza = radiance(reflRay, depth, seed) * RP;
+    }
+    else
+    {
+      wrxstiimpreza = radiance(Ray(x, tdir), depth, seed) * TP;
+    }
+  }
+  else
+  {
+    wrxstiimpreza = radiance(reflRay, depth, seed) * Re + radiance(Ray(x, tdir), depth, seed) * Tr;
+  }
+  return intersectedSphere.emission + f.mult(wrxstiimpreza);
 }
 
 int main(int argc, char *argv[])
