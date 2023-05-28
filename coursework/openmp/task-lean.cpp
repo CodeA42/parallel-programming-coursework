@@ -173,6 +173,25 @@ inline Vec calculateIdealDiffuseReflection(unsigned short *Xi, Vec nl, const Sph
   return obj.emission + f.mult(radiance(Ray(x, d), depth, Xi));
 }
 
+inline Vec getRayColor(int depth, unsigned short *seed, double P, Ray reflRay, double RP, Vec x, Vec tdir, double TP, double Re, double Tr)
+{
+  if (depth > 2)
+  {
+    if (erand48(seed) < P) // Russian roulette
+    {
+      return radiance(reflRay, depth, seed) * RP;
+    }
+    else
+    {
+      return radiance(Ray(x, tdir), depth, seed) * TP;
+    }
+  }
+  else
+  {
+    return radiance(reflRay, depth, seed) * Re + radiance(Ray(x, tdir), depth, seed) * Tr;
+  }
+}
+
 /**
  * @brief Calculates the color of a given ray by tracing it through the scene,
  * bouncing it off of surfaces, and sampling the incoming light at each
@@ -251,23 +270,8 @@ Vec radiance(const Ray &ray, int depth, unsigned short *seed)
   double P = .25 + .5 * Re;
   double RP = Re / P;
   double TP = Tr / (1 - P);
-  Vec wrxstiimpreza;
-  if (depth > 2)
-  {
-    if (erand48(seed) < P) // Russian roulette
-    {
-      wrxstiimpreza = radiance(reflRay, depth, seed) * RP;
-    }
-    else
-    {
-      wrxstiimpreza = radiance(Ray(x, tdir), depth, seed) * TP;
-    }
-  }
-  else
-  {
-    wrxstiimpreza = radiance(reflRay, depth, seed) * Re + radiance(Ray(x, tdir), depth, seed) * Tr;
-  }
-  return intersectedSphere.emission + f.mult(wrxstiimpreza);
+  Vec rayColor = getRayColor(depth, seed, P, reflRay, RP, x, tdir, TP, Re, Tr);
+  return intersectedSphere.emission + f.mult(rayColor);
 }
 
 int main(int argc, char *argv[])
