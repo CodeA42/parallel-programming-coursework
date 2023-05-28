@@ -284,6 +284,7 @@ int main(int argc, char *argv[])
   Vec cy = (cx % cam.direction).norm() * .5135;
   Vec r;
   Vec *c = new Vec[width * height];
+
   for (int y = 0; y < height; y++) // Loop over image rows
   {
     fprintf(stderr, "\rRendering (%d spp) %5.2f%%", samples * 4, 100. * y / (height - 1));
@@ -315,6 +316,7 @@ int main(int argc, char *argv[])
       }
     }
   }
+
   FILE *f = fopen("image.ppm", "w"); // Write image to PPM file.
   fprintf(f, "P3\n%d %d\n%d\n", width, height, 255);
   for (int i = 0; i < width * height; i++)
