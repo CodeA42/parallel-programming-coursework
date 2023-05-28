@@ -150,17 +150,17 @@ inline int toInt(double x)
  *  and returns the distance to the closest intersection (if any),
  *  and the index of the closest sphere.
  **/
-inline bool intersect(const Ray &ray, double &closestIntersection, int &id)
+inline bool intersect(const Ray &ray, double &closestIntersection, int &closestSphereId)
 {
-  double n = sizeof(spheres) / sizeof(Sphere);
+  double numberOfSpheres = sizeof(spheres) / sizeof(Sphere);
   double d;
   double infinity = 1e20;
   closestIntersection = 1e20;
-  for (int i = int(n); i--;)
-    if ((d = spheres[i].intersect(ray)) && d < closestIntersection)
+  for (int id = int(numberOfSpheres); id--;)
+    if ((d = spheres[id].intersect(ray)) && d < closestIntersection)
     {
       closestIntersection = d;
-      id = i;
+      closestSphereId = id;
     }
   return closestIntersection < infinity;
 }
