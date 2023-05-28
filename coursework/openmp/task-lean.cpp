@@ -300,8 +300,10 @@ int main(int argc, char *argv[])
         {
           for (int s = 0; s < samples; s++)
           {
-            double r1 = 2 * erand48(Xi), dx = r1 < 1 ? sqrt(r1) - 1 : 1 - sqrt(2 - r1);
-            double r2 = 2 * erand48(Xi), dy = r2 < 1 ? sqrt(r2) - 1 : 1 - sqrt(2 - r2);
+            double r1 = 2 * erand48(Xi);
+            double dx = r1 < 1 ? sqrt(r1) - 1 : 1 - sqrt(2 - r1);
+            double r2 = 2 * erand48(Xi);
+            double dy = r2 < 1 ? sqrt(r2) - 1 : 1 - sqrt(2 - r2);
             Vec d = cx * (((sx + .5 + dx) / 2 + x) / width - .5) +
                     cy * (((sy + .5 + dy) / 2 + y) / height - .5) + cam.direction;
             r = r + radiance(Ray(cam.origin + d * 140, d.norm()), 0, Xi) * (1. / samples);
