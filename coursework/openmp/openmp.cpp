@@ -37,6 +37,8 @@ struct Ray
   Ray(Vec origin_, Vec direction_) : origin(origin_), direction(direction_) {}
 };
 
+Vec radiance(const Ray &ray, int depth, unsigned short *Xi);
+
 /**
  * @brief Used to specify the type of material that a sphere
  * is made of, which determines how it reflects light.
@@ -135,6 +137,14 @@ inline bool intersect(const Ray &ray, double &t, int &id)
   return t < inf;
 }
 
+inline Vec calculateIdealDiffuseReflection(unsigned short *Xi, Vec nl, const Sphere &obj, Vec f, Vec x, int depth)
+{
+  double r1 = 2 * M_PI * erand48(Xi), r2 = erand48(Xi), r2s = sqrt(r2);
+  Vec w = nl, u = ((fabs(w.x) > .1 ? Vec(0, 1) : Vec(1)) % w).norm(), v = w % u;
+  Vec d = (u * cos(r1) * r2s + v * sin(r1) * r2s + w * sqrt(1 - r2)).norm();
+  return obj.emission + f.mult(radiance(Ray(x, d), depth, Xi));
+}
+
 /**
  * @brief Calculates the color of a given ray by tracing it through the scene,
  * bouncing it off of surfaces, and sampling the incoming light at each
@@ -184,10 +194,7 @@ Vec radiance(const Ray &ray, int depth, unsigned short *Xi)
   }                               // R.R.
   if (obj.reflectionType == DIFF) // Ideal DIFFUSE reflection
   {
-    double r1 = 2 * M_PI * erand48(Xi), r2 = erand48(Xi), r2s = sqrt(r2);
-    Vec w = nl, u = ((fabs(w.x) > .1 ? Vec(0, 1) : Vec(1)) % w).norm(), v = w % u;
-    Vec d = (u * cos(r1) * r2s + v * sin(r1) * r2s + w * sqrt(1 - r2)).norm();
-    return obj.emission + f.mult(radiance(Ray(x, d), depth, Xi));
+    return calculateIdealDiffuseReflection(Xi, nl, obj, f, x, depth);
   }
   else if (obj.reflectionType == SPEC) // Ideal SPECULAR reflection
   {
