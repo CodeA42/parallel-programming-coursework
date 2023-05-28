@@ -1,7 +1,6 @@
 #include <math.h>   // smallpt, a Path Tracer by Kevin Beason, 2008
 #include <stdlib.h> // Make : g++ -O3 smallpt.cpp -o smallpt
 #include <stdio.h>  // Usage: time ./smallpt 5000 && xv image.ppm
-#include <omp.h>
 
 /**
  * @brief Represents a vector in 3D space, with x, y, and z components.
