@@ -257,7 +257,9 @@ int main(int argc, char *argv[])
   for (int y = 0; y < height; y++) // Loop over image rows
   {
     fprintf(stderr, "\rRendering (%d spp) %5.2f%%", samples * 4, 100. * y / (height - 1));
-    for (unsigned short x = 0, Xi[3] = {0, 0, y * y * y}; x < width; x++) // Loop cols
+    unsigned short Xi[3] = {0, 0, y * y * y};
+
+    for (unsigned short x = 0; x < width; x++) // Loop cols
     {
       // Subpixel y
       int sy;
