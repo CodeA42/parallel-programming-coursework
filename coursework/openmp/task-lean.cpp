@@ -253,9 +253,14 @@ int main(int argc, char *argv[])
     fprintf(stderr, "\rRendering (%d spp) %5.2f%%", samples * 4, 100. * y / (height - 1));
     for (unsigned short x = 0, Xi[3] = {0, 0, y * y * y}; x < width; x++) // Loop cols
     {
-      for (int sy = 0, i = (height - y - 1) * width + x; sy < 2; sy++) // 2x2 subpixel rows
+      // Subpixel y
+      int sy;
+      int i;
+      for (sy = 0, i = (height - y - 1) * width + x; sy < 2; sy++) // 2x2 subpixel rows
       {
-        for (int sx = 0; sx < 2; sx++, r = Vec()) // 2x2 subpixel cols
+        // Subpixel x
+        int sx;
+        for (sx = 0; sx < 2; sx++, r = Vec()) // 2x2 subpixel cols
         {
           for (int s = 0; s < samples; s++)
           {
