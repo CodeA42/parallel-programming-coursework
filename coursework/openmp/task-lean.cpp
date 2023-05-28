@@ -79,19 +79,19 @@ enum Refl_t
  */
 struct Sphere
 {
-  double rad;            // radius
+  double radius;         // radius
   Vec position;          // position
   Vec emission;          // emission
   Vec color;             // color
   Refl_t reflectionType; // reflection type (DIFFuse, SPECular, REFRactive)
-  Sphere(double rad_, Vec position_, Vec emission_, Vec color_, Refl_t refl_) : rad(rad_), position(position_), emission(emission_), color(color_), reflectionType(refl_) {}
+  Sphere(double radius_, Vec position_, Vec emission_, Vec color_, Refl_t refl_) : radius(radius_), position(position_), emission(emission_), color(color_), reflectionType(refl_) {}
   double intersect(const Ray &ray) const // returns distance, 0 if nohit
   {
     Vec op = position - ray.origin; // Solve t^2*d.d + 2*t*(o-p).d + (o-p).(o-p)-R^2 = 0
     double t;
     double eps = 1e-4;
     double b = op.dotProduct(ray.direction);
-    double det = b * b - op.dotProduct(op) + rad * rad;
+    double det = b * b - op.dotProduct(op) + radius * radius;
     if (det < 0)
       return 0;
     else
