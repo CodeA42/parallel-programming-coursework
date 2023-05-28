@@ -285,11 +285,13 @@ int main(int argc, char *argv[])
   Vec r;
   Vec *c = new Vec[width * height];
 
+#pragma omp parallel for schedule(dynamic, 1)
   for (int y = 0; y < height; y++) // Loop over image rows
   {
     fprintf(stderr, "\rRendering (%d spp) %5.2f%%", samples * 4, 100. * y / (height - 1));
     unsigned short Xi[3] = {0, 0, y * y * y};
 
+#pragma omp parallel for private(r) shared(c, Xi) schedule(dynamic, 32)
     for (unsigned short x = 0; x < width; x++) // Loop cols
     {
       // Subpixel y
