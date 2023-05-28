@@ -39,7 +39,7 @@ struct Vec
     return *this = *this * (1 / sqrt(x * x + y * y + z * z));
   }
   // cross:
-  double dot(const Vec &b) const
+  double dotProduct(const Vec &b) const
   {
     return x * b.x + y * b.y + z * b.z;
   }
@@ -67,10 +67,10 @@ Vec radiance(const Ray &ray, int depth, unsigned short *Xi);
  */
 enum Refl_t
 {
-  DIFF,
-  SPEC,
-  REFR
-}; // material types, used in radiance()
+  DIFF, // Diffuse material, which scatters light in various directions
+  SPEC, // Specular material, which reflects light in a mirror-like manner
+  REFR  // Refractive material, which allows light to pass through with refraction
+};
 
 /**
  * @brief Represents a sphere in the scene, with a radius, a position,
@@ -79,19 +79,19 @@ enum Refl_t
  */
 struct Sphere
 {
-  double rad;            // radius
+  double radius;         // radius
   Vec position;          // position
   Vec emission;          // emission
   Vec color;             // color
   Refl_t reflectionType; // reflection type (DIFFuse, SPECular, REFRactive)
-  Sphere(double rad_, Vec position_, Vec emission_, Vec color_, Refl_t refl_) : rad(rad_), position(position_), emission(emission_), color(color_), reflectionType(refl_) {}
+  Sphere(double radius_, Vec position_, Vec emission_, Vec color_, Refl_t refl_) : radius(radius_), position(position_), emission(emission_), color(color_), reflectionType(refl_) {}
   double intersect(const Ray &ray) const // returns distance, 0 if nohit
   {
     Vec op = position - ray.origin; // Solve t^2*d.d + 2*t*(o-p).d + (o-p).(o-p)-R^2 = 0
     double t;
     double eps = 1e-4;
-    double b = op.dot(ray.direction);
-    double det = b * b - op.dot(op) + rad * rad;
+    double b = op.dotProduct(ray.direction);
+    double det = b * b - op.dotProduct(op) + radius * radius;
     if (det < 0)
       return 0;
     else
@@ -173,6 +173,25 @@ inline Vec calculateIdealDiffuseReflection(unsigned short *Xi, Vec nl, const Sph
   return obj.emission + f.mult(radiance(Ray(x, d), depth, Xi));
 }
 
+inline Vec getRayColor(int depth, unsigned short *seed, double P, Ray reflRay, double RP, Vec x, Vec tdir, double TP, double Re, double Tr)
+{
+  if (depth > 2)
+  {
+    if (erand48(seed) < P) // Russian roulette
+    {
+      return radiance(reflRay, depth, seed) * RP;
+    }
+    else
+    {
+      return radiance(Ray(x, tdir), depth, seed) * TP;
+    }
+  }
+  else
+  {
+    return radiance(reflRay, depth, seed) * Re + radiance(Ray(x, tdir), depth, seed) * Tr;
+  }
+}
+
 /**
  * @brief Calculates the color of a given ray by tracing it through the scene,
  * bouncing it off of surfaces, and sampling the incoming light at each
@@ -204,9 +223,11 @@ Vec radiance(const Ray &ray, int depth, unsigned short *seed)
   double distToIntersection;
   int idOfIntersectedObj;
   if (!intersect(ray, distToIntersection, idOfIntersectedObj))
-    return Vec();                                  // if miss, return black
-  const Sphere &obj = spheres[idOfIntersectedObj]; // the hit object
-  Vec x = ray.origin + ray.direction * distToIntersection, n = (x - obj.position).norm(), nl = n.dot(ray.direction) < 0 ? n : n * -1, f = obj.color;
+    return Vec();                                                // if miss, return black
+  const Sphere &intersectedSphere = spheres[idOfIntersectedObj]; // the hit object
+  Vec x = ray.origin + ray.direction * distToIntersection;
+  Vec n = (x - intersectedSphere.position).norm();
+  Vec nl = n.dotProduct(ray.direction) < 0 ? n : n * -1, f = intersectedSphere.color;
   double p = f.x > f.y && f.x > f.z ? f.x : f.y > f.z ? f.y
                                                       : f.z; // max refl
   if (++depth > 5)
@@ -217,31 +238,40 @@ Vec radiance(const Ray &ray, int depth, unsigned short *seed)
     }
     else
     {
-      return obj.emission;
+      return intersectedSphere.emission;
     }
-  }                               // R.R.
-  if (obj.reflectionType == DIFF) // Ideal DIFFUSE reflection
+  }                                             // R.R.
+  if (intersectedSphere.reflectionType == DIFF) // Ideal DIFFUSE reflection
   {
-    return calculateIdealDiffuseReflection(seed, nl, obj, f, x, depth);
+    return calculateIdealDiffuseReflection(seed, nl, intersectedSphere, f, x, depth);
   }
-  else if (obj.reflectionType == SPEC) // Ideal SPECULAR reflection
+  else if (intersectedSphere.reflectionType == SPEC) // Ideal SPECULAR reflection
   {
-    return obj.emission + f.mult(radiance(Ray(x, ray.direction - n * 2 * n.dot(ray.direction)), depth, seed));
+    return intersectedSphere.emission + f.mult(radiance(Ray(x, ray.direction - n * 2 * n.dotProduct(ray.direction)), depth, seed));
   }
-  Ray reflRay(x, ray.direction - n * 2 * n.dot(ray.direction)); // Ideal dielectric REFRACTION
-  bool into = n.dot(nl) > 0;                                    // Ray from outside going in?
-  double nc = 1, nt = 1.5, nnt = into ? nc / nt : nt / nc, ddn = ray.direction.dot(nl), cos2t;
+  Ray reflRay(x, ray.direction - n * 2 * n.dotProduct(ray.direction)); // Ideal dielectric REFRACTION
+  bool into = n.dotProduct(nl) > 0;                                    // Ray from outside going in?
+  double nc = 1;
+  double nt = 1.5;
+  double nnt = into ? nc / nt : nt / nc;
+  double ddn = ray.direction.dotProduct(nl);
+  double cos2t;
   if ((cos2t = 1 - nnt * nnt * (1 - ddn * ddn)) < 0) // Total internal reflection
   {
-    return obj.emission + f.mult(radiance(reflRay, depth, seed));
+    return intersectedSphere.emission + f.mult(radiance(reflRay, depth, seed));
   }
   Vec tdir = (ray.direction * nnt - n * ((into ? 1 : -1) * (ddn * nnt + sqrt(cos2t)))).norm();
-  double a = nt - nc, b = nt + nc, R0 = a * a / (b * b), c = 1 - (into ? -ddn : tdir.dot(n));
-  double Re = R0 + (1 - R0) * c * c * c * c * c, Tr = 1 - Re, P = .25 + .5 * Re, RP = Re / P, TP = Tr / (1 - P);
-  return obj.emission + f.mult(depth > 2 ? (erand48(seed) < P ? // Russian roulette
-                                                radiance(reflRay, depth, seed) * RP
-                                                              : radiance(Ray(x, tdir), depth, seed) * TP)
-                                         : radiance(reflRay, depth, seed) * Re + radiance(Ray(x, tdir), depth, seed) * Tr);
+  double a = nt - nc;
+  double b = nt + nc;
+  double R0 = a * a / (b * b);
+  double c = 1 - (into ? -ddn : tdir.dotProduct(n));
+  double Re = R0 + (1 - R0) * c * c * c * c * c;
+  double Tr = 1 - Re;
+  double P = .25 + .5 * Re;
+  double RP = Re / P;
+  double TP = Tr / (1 - P);
+  Vec rayColor = getRayColor(depth, seed, P, reflRay, RP, x, tdir, TP, Re, Tr);
+  return intersectedSphere.emission + f.mult(rayColor);
 }
 
 int main(int argc, char *argv[])
@@ -272,8 +302,10 @@ int main(int argc, char *argv[])
         {
           for (int s = 0; s < samples; s++)
           {
-            double r1 = 2 * erand48(Xi), dx = r1 < 1 ? sqrt(r1) - 1 : 1 - sqrt(2 - r1);
-            double r2 = 2 * erand48(Xi), dy = r2 < 1 ? sqrt(r2) - 1 : 1 - sqrt(2 - r2);
+            double r1 = 2 * erand48(Xi);
+            double dx = r1 < 1 ? sqrt(r1) - 1 : 1 - sqrt(2 - r1);
+            double r2 = 2 * erand48(Xi);
+            double dy = r2 < 1 ? sqrt(r2) - 1 : 1 - sqrt(2 - r2);
             Vec d = cx * (((sx + .5 + dx) / 2 + x) / width - .5) +
                     cy * (((sy + .5 + dy) / 2 + y) / height - .5) + cam.direction;
             r = r + radiance(Ray(cam.origin + d * 140, d.norm()), 0, Xi) * (1. / samples);
