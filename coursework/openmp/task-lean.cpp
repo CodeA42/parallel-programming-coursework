@@ -188,9 +188,9 @@ inline Vec calculateIdealDiffuseReflection(unsigned short *Xi, Vec nl, const Sph
  * of continuing (determined by the maximum reflection coefficient encountered along
  * the path). This helps reduce noise and speed up the rendering process.
  *
- * @param ray
- * @param depth
- * @param Xi
+ * @param ray Ray to base the calculations for
+ * @param depth Depth Counter
+ * @param seed Seed used for the calculations
  * @return Vec
  */
 Vec radiance(const Ray &ray, int depth, unsigned short *seed)
