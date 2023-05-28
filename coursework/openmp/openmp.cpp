@@ -18,13 +18,35 @@ struct Vec
     y = y_;
     z = z_;
   }
-  Vec operator+(const Vec &b) const { return Vec(x + b.x, y + b.y, z + b.z); }
-  Vec operator-(const Vec &b) const { return Vec(x - b.x, y - b.y, z - b.z); }
-  Vec operator*(double b) const { return Vec(x * b, y * b, z * b); }
-  Vec mult(const Vec &b) const { return Vec(x * b.x, y * b.y, z * b.z); }
-  Vec &norm() { return *this = *this * (1 / sqrt(x * x + y * y + z * z)); }
-  double dot(const Vec &b) const { return x * b.x + y * b.y + z * b.z; } // cross:
-  Vec operator%(Vec &b) { return Vec(y * b.z - z * b.y, z * b.x - x * b.z, x * b.y - y * b.x); }
+  Vec operator+(const Vec &b) const
+  {
+    return Vec(x + b.x, y + b.y, z + b.z);
+  }
+  Vec operator-(const Vec &b) const
+  {
+    return Vec(x - b.x, y - b.y, z - b.z);
+  }
+  Vec operator*(double b) const
+  {
+    return Vec(x * b, y * b, z * b);
+  }
+  Vec mult(const Vec &b) const
+  {
+    return Vec(x * b.x, y * b.y, z * b.z);
+  }
+  Vec &norm()
+  {
+    return *this = *this * (1 / sqrt(x * x + y * y + z * z));
+  }
+  // cross:
+  double dot(const Vec &b) const
+  {
+    return x * b.x + y * b.y + z * b.z;
+  }
+  Vec operator%(Vec &b)
+  {
+    return Vec(y * b.z - z * b.y, z * b.x - x * b.z, x * b.y - y * b.x);
+  }
 };
 
 /**
@@ -220,7 +242,10 @@ int main(int argc, char *argv[])
 {
   int width = 1024, height = 768, samps = argc == 2 ? atoi(argv[1]) / 4 : 1; // # samples
   Ray cam(Vec(50, 52, 295.6), Vec(0, -0.042612, -1).norm());                 // cam pos, dir
-  Vec cx = Vec(width * .5135 / height), cy = (cx % cam.direction).norm() * .5135, r, *c = new Vec[width * height];
+  Vec cx = Vec(width * .5135 / height);
+  Vec cy = (cx % cam.direction).norm() * .5135;
+  Vec r;
+  Vec *c = new Vec[width * height];
   for (int y = 0; y < height; y++) // Loop over image rows
   {
     fprintf(stderr, "\rRendering (%d spp) %5.2f%%", samps * 4, 100. * y / (height - 1));
