@@ -240,28 +240,30 @@ Vec radiance(const Ray &ray, int depth, unsigned short *seed)
 
 int main(int argc, char *argv[])
 {
-  int width = 1024, height = 768, samps = argc == 2 ? atoi(argv[1]) / 4 : 1; // # samples
-  Ray cam(Vec(50, 52, 295.6), Vec(0, -0.042612, -1).norm());                 // cam pos, dir
+  int width = 1024;
+  int height = 768;
+  int samples = argc == 2 ? atoi(argv[1]) / 4 : 1;           // # samples
+  Ray cam(Vec(50, 52, 295.6), Vec(0, -0.042612, -1).norm()); // cam pos, dir
   Vec cx = Vec(width * .5135 / height);
   Vec cy = (cx % cam.direction).norm() * .5135;
   Vec r;
   Vec *c = new Vec[width * height];
   for (int y = 0; y < height; y++) // Loop over image rows
   {
-    fprintf(stderr, "\rRendering (%d spp) %5.2f%%", samps * 4, 100. * y / (height - 1));
+    fprintf(stderr, "\rRendering (%d spp) %5.2f%%", samples * 4, 100. * y / (height - 1));
     for (unsigned short x = 0, Xi[3] = {0, 0, y * y * y}; x < width; x++) // Loop cols
     {
       for (int sy = 0, i = (height - y - 1) * width + x; sy < 2; sy++) // 2x2 subpixel rows
       {
         for (int sx = 0; sx < 2; sx++, r = Vec()) // 2x2 subpixel cols
         {
-          for (int s = 0; s < samps; s++)
+          for (int s = 0; s < samples; s++)
           {
             double r1 = 2 * erand48(Xi), dx = r1 < 1 ? sqrt(r1) - 1 : 1 - sqrt(2 - r1);
             double r2 = 2 * erand48(Xi), dy = r2 < 1 ? sqrt(r2) - 1 : 1 - sqrt(2 - r2);
             Vec d = cx * (((sx + .5 + dx) / 2 + x) / width - .5) +
                     cy * (((sy + .5 + dy) / 2 + y) / height - .5) + cam.direction;
-            r = r + radiance(Ray(cam.origin + d * 140, d.norm()), 0, Xi) * (1. / samps);
+            r = r + radiance(Ray(cam.origin + d * 140, d.norm()), 0, Xi) * (1. / samples);
           } // Camera rays are pushed ^^^^^ forward to start in interior
           c[i] = c[i] + Vec(clamp(r.x), clamp(r.y), clamp(r.z)) * .25;
         }
