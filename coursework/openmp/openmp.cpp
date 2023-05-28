@@ -242,7 +242,7 @@ int main(int argc, char *argv[])
 {
   int width = 1024;
   int height = 768;
-  int samples = argc == 2 ? atoi(argv[1]) / 4 : 1;           // # samples
+  int samples = argc == 2 ? atoi(argv[1]) / 4 : 1;
   Ray cam(Vec(50, 52, 295.6), Vec(0, -0.042612, -1).norm()); // cam pos, dir
   Vec cx = Vec(width * .5135 / height);
   Vec cy = (cx % cam.direction).norm() * .5135;
