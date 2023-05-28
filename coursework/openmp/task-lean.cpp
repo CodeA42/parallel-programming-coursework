@@ -39,7 +39,7 @@ struct Vec
     return *this = *this * (1 / sqrt(x * x + y * y + z * z));
   }
   // cross:
-  double dot(const Vec &b) const
+  double dotProduct(const Vec &b) const
   {
     return x * b.x + y * b.y + z * b.z;
   }
@@ -90,8 +90,8 @@ struct Sphere
     Vec op = position - ray.origin; // Solve t^2*d.d + 2*t*(o-p).d + (o-p).(o-p)-R^2 = 0
     double t;
     double eps = 1e-4;
-    double b = op.dot(ray.direction);
-    double det = b * b - op.dot(op) + rad * rad;
+    double b = op.dotProduct(ray.direction);
+    double det = b * b - op.dotProduct(op) + rad * rad;
     if (det < 0)
       return 0;
     else
@@ -227,7 +227,7 @@ Vec radiance(const Ray &ray, int depth, unsigned short *seed)
   const Sphere &intersectedSphere = spheres[idOfIntersectedObj]; // the hit object
   Vec x = ray.origin + ray.direction * distToIntersection;
   Vec n = (x - intersectedSphere.position).norm();
-  Vec nl = n.dot(ray.direction) < 0 ? n : n * -1, f = intersectedSphere.color;
+  Vec nl = n.dotProduct(ray.direction) < 0 ? n : n * -1, f = intersectedSphere.color;
   double p = f.x > f.y && f.x > f.z ? f.x : f.y > f.z ? f.y
                                                       : f.z; // max refl
   if (++depth > 5)
@@ -247,14 +247,14 @@ Vec radiance(const Ray &ray, int depth, unsigned short *seed)
   }
   else if (intersectedSphere.reflectionType == SPEC) // Ideal SPECULAR reflection
   {
-    return intersectedSphere.emission + f.mult(radiance(Ray(x, ray.direction - n * 2 * n.dot(ray.direction)), depth, seed));
+    return intersectedSphere.emission + f.mult(radiance(Ray(x, ray.direction - n * 2 * n.dotProduct(ray.direction)), depth, seed));
   }
-  Ray reflRay(x, ray.direction - n * 2 * n.dot(ray.direction)); // Ideal dielectric REFRACTION
-  bool into = n.dot(nl) > 0;                                    // Ray from outside going in?
+  Ray reflRay(x, ray.direction - n * 2 * n.dotProduct(ray.direction)); // Ideal dielectric REFRACTION
+  bool into = n.dotProduct(nl) > 0;                                    // Ray from outside going in?
   double nc = 1;
   double nt = 1.5;
   double nnt = into ? nc / nt : nt / nc;
-  double ddn = ray.direction.dot(nl);
+  double ddn = ray.direction.dotProduct(nl);
   double cos2t;
   if ((cos2t = 1 - nnt * nnt * (1 - ddn * ddn)) < 0) // Total internal reflection
   {
@@ -264,7 +264,7 @@ Vec radiance(const Ray &ray, int depth, unsigned short *seed)
   double a = nt - nc;
   double b = nt + nc;
   double R0 = a * a / (b * b);
-  double c = 1 - (into ? -ddn : tdir.dot(n));
+  double c = 1 - (into ? -ddn : tdir.dotProduct(n));
   double Re = R0 + (1 - R0) * c * c * c * c * c;
   double Tr = 1 - Re;
   double P = .25 + .5 * Re;
