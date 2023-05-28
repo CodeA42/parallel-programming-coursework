@@ -70,7 +70,7 @@ enum Refl_t
   DIFF, // Diffuse material, which scatters light in various directions
   SPEC, // Specular material, which reflects light in a mirror-like manner
   REFR  // Refractive material, which allows light to pass through with refraction
-};      // material types, used in radiance()
+};
 
 /**
  * @brief Represents a sphere in the scene, with a radius, a position,
