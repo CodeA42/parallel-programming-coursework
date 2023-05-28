@@ -152,7 +152,7 @@ inline bool intersect(const Ray &ray, double &t, int &id)
   double n = sizeof(spheres) / sizeof(Sphere);
   double d;
   double inf = 1e20;
-  double t = 1e20;
+  t = 1e20;
   for (int i = int(n); i--;)
     if ((d = spheres[i].intersect(ray)) && d < t)
     {
