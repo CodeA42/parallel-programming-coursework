@@ -88,7 +88,10 @@ struct Sphere
   double intersect(const Ray &ray) const // returns distance, 0 if nohit
   {
     Vec op = position - ray.origin; // Solve t^2*d.d + 2*t*(o-p).d + (o-p).(o-p)-R^2 = 0
-    double t, eps = 1e-4, b = op.dot(ray.direction), det = b * b - op.dot(op) + rad * rad;
+    double t;
+    double eps = 1e-4;
+    double b = op.dot(ray.direction);
+    double det = b * b - op.dot(op) + rad * rad;
     if (det < 0)
       return 0;
     else
@@ -147,19 +150,19 @@ inline int toInt(double x)
  *  and returns the distance to the closest intersection (if any),
  *  and the index of the closest sphere.
  **/
-inline bool intersect(const Ray &ray, double &t, int &id)
+inline bool intersect(const Ray &ray, double &closestIntersection, int &id)
 {
   double n = sizeof(spheres) / sizeof(Sphere);
   double d;
-  double inf = 1e20;
-  t = 1e20;
+  double infinity = 1e20;
+  closestIntersection = 1e20;
   for (int i = int(n); i--;)
-    if ((d = spheres[i].intersect(ray)) && d < t)
+    if ((d = spheres[i].intersect(ray)) && d < closestIntersection)
     {
-      t = d;
+      closestIntersection = d;
       id = i;
     }
-  return t < inf;
+  return closestIntersection < infinity;
 }
 
 inline Vec calculateIdealDiffuseReflection(unsigned short *Xi, Vec nl, const Sphere &obj, Vec f, Vec x, int depth)
