@@ -284,34 +284,37 @@ int main(int argc, char *argv[])
   Vec r;
   Vec *c = new Vec[width * height];
 
+#pragma omp parallel for schedule(dynamic, 1)
   for (int y = 0; y < height; y++) // Loop over image rows
   {
     fprintf(stderr, "\rRendering (%d spp) %5.2f%%", samples * 4, 100. * y / (height - 1));
     unsigned short Xi[3] = {0, 0, y * y * y};
 
-    for (unsigned short x = 0; x < width; x++) // Loop cols
+    // Declare temporary vectors to store data for vectorized operations
+    Vec temp[4];
+
+    for (int x = 0; x < width; x += 4)
     {
-      // Subpixel y
-      int sy;
-      int i;
-      for (sy = 0, i = (height - y - 1) * width + x; sy < 2; sy++) // 2x2 subpixel rows
+      // Load data into temporary vectors
+      for (int i = 0; i < 4; i++)
       {
-        // Subpixel x
-        int sx;
-        for (sx = 0; sx < 2; sx++, r = Vec()) // 2x2 subpixel cols
-        {
-          for (int s = 0; s < samples; s++)
-          {
-            double r1 = 2 * erand48(Xi);
-            double dx = r1 < 1 ? sqrt(r1) - 1 : 1 - sqrt(2 - r1);
-            double r2 = 2 * erand48(Xi);
-            double dy = r2 < 1 ? sqrt(r2) - 1 : 1 - sqrt(2 - r2);
-            Vec d = cx * (((sx + .5 + dx) / 2 + x) / width - .5) +
-                    cy * (((sy + .5 + dy) / 2 + y) / height - .5) + cam.direction;
-            r = r + radiance(Ray(cam.origin + d * 140, d.norm()), 0, Xi) * (1. / samples);
-          } // Camera rays are pushed ^^^^^ forward to start in interior
-          c[i] = c[i] + Vec(clamp(r.x), clamp(r.y), clamp(r.z)) * .25;
-        }
+        int index = x + i;
+        if (index < width)
+          temp[i] = c[y * width + index];
+        else
+          temp[i] = Vec(); // Fill remaining elements with default value
+      }
+
+      // Perform vectorized operations
+      // Example: Add two vectors
+      Vec result = temp[0] + temp[1];
+
+      // Store the result back to the data array
+      for (int i = 0; i < 4; i++)
+      {
+        int index = x + i;
+        if (index < width)
+          c[y * width + index] = result;
       }
     }
   }
