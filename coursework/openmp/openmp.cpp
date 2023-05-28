@@ -88,7 +88,10 @@ struct Sphere
   double intersect(const Ray &ray) const // returns distance, 0 if nohit
   {
     Vec op = position - ray.origin; // Solve t^2*d.d + 2*t*(o-p).d + (o-p).(o-p)-R^2 = 0
-    double t, eps = 1e-4, b = op.dot(ray.direction), det = b * b - op.dot(op) + rad * rad;
+    double t;
+    double eps = 1e-4;
+    double b = op.dot(ray.direction);
+    double det = b * b - op.dot(op) + rad * rad;
     if (det < 0)
       return 0;
     else
@@ -147,16 +150,19 @@ inline int toInt(double x)
  *  and returns the distance to the closest intersection (if any),
  *  and the index of the closest sphere.
  **/
-inline bool intersect(const Ray &ray, double &t, int &id)
+inline bool intersect(const Ray &ray, double &closestIntersection, int &closestSphereId)
 {
-  double n = sizeof(spheres) / sizeof(Sphere), d, inf = t = 1e20;
-  for (int i = int(n); i--;)
-    if ((d = spheres[i].intersect(ray)) && d < t)
+  double numberOfSpheres = sizeof(spheres) / sizeof(Sphere);
+  double distance;
+  double infinity = 1e20;
+  closestIntersection = 1e20;
+  for (int id = int(numberOfSpheres); id--;)
+    if ((distance = spheres[id].intersect(ray)) && distance < closestIntersection)
     {
-      t = d;
-      id = i;
+      closestIntersection = distance;
+      closestSphereId = id;
     }
-  return t < inf;
+  return closestIntersection < infinity;
 }
 
 inline Vec calculateIdealDiffuseReflection(unsigned short *Xi, Vec nl, const Sphere &obj, Vec f, Vec x, int depth)
@@ -188,9 +194,9 @@ inline Vec calculateIdealDiffuseReflection(unsigned short *Xi, Vec nl, const Sph
  * of continuing (determined by the maximum reflection coefficient encountered along
  * the path). This helps reduce noise and speed up the rendering process.
  *
- * @param ray
- * @param depth
- * @param Xi
+ * @param ray Ray to base the calculations for
+ * @param depth Depth Counter
+ * @param seed Seed used for the calculations
  * @return Vec
  */
 Vec radiance(const Ray &ray, int depth, unsigned short *seed)
@@ -253,9 +259,14 @@ int main(int argc, char *argv[])
     fprintf(stderr, "\rRendering (%d spp) %5.2f%%", samples * 4, 100. * y / (height - 1));
     for (unsigned short x = 0, Xi[3] = {0, 0, y * y * y}; x < width; x++) // Loop cols
     {
-      for (int sy = 0, i = (height - y - 1) * width + x; sy < 2; sy++) // 2x2 subpixel rows
+      // Subpixel y
+      int sy;
+      int i;
+      for (sy = 0, i = (height - y - 1) * width + x; sy < 2; sy++) // 2x2 subpixel rows
       {
-        for (int sx = 0; sx < 2; sx++, r = Vec()) // 2x2 subpixel cols
+        // Subpixel x
+        int sx;
+        for (sx = 0; sx < 2; sx++, r = Vec()) // 2x2 subpixel cols
         {
           for (int s = 0; s < samples; s++)
           {
